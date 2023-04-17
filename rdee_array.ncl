@@ -31,8 +31,8 @@ function ind_eq_map(arrP[*], arrC[*], opt)
 local allowMissing, resStr, res, i, indT
 begin
     allowMissing = False
-    allowRepeat = True
-    autoSort = True
+    allowRepeat = False
+    autoSort = False
     if (isatt(opt, "allowMissing")) then
         allowMissing = opt@allowMissing
     end if
@@ -648,6 +648,8 @@ begin
     dims2 = dims
     dims2(idim) = dimsizes(label_sps2) - 1
     res = new (dims2, typeof(data))
+    ; print(dims2)
+    ; print(label_sps2)
     do i = 0, dims2(idim) - 1
         if (ndim .eq. 1 .and. idim .eq. 0) then
             res(i) = dim_xxx_n(data(label_sps2(i) : label_sps2(i + 1) - 1), idim, method)
@@ -1051,3 +1053,35 @@ begin
     stats = dim_stat4(x)
     return stats(2)
 end 
+
+
+
+;**********************************************************************
+; Convert definition of a series of integer into an array
+; supporting "to" and "sep" sign
+;**********************************************************************
+undef("splitIntsDef")
+function splitIntsDef(idef, to, sep)
+; to : from A to B, usually "-", such as 2015-2020, 1-9
+; sep : seperator, usually ",", such as "1,3,5,7"
+begin
+    pos_sep = str_index_of_substr(idef, sep, 1)
+    if (ismissing(pos_sep)) then
+        if (str_match_bool(idef, to)) then
+            i_pair = toint(str_split(idef, to))
+            if (i_pair(0) .lt. i_pair(1)) then
+                iList = ispan(i_pair(0), i_pair(1), 1)
+            else
+                iList = ispan(i_pair(1), i_pair(0), 1)
+                iList = iList(::-1)
+            end if
+            return iList 
+        else
+            return toint(idef)
+        end if
+    else
+        res = array_append_record(splitIntsDef(str_get_cols(idef, 0, pos_sep - 1), to, sep), splitIntsDef(str_get_cols(idef, pos_sep + 1, -1), to, sep), 0)
+        return res
+    end if
+
+end

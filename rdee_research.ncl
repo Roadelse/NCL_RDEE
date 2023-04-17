@@ -45,7 +45,7 @@ begin
     FBIAS = sum((xs3 - ys3) / (xs3 + ys3)) / lens3 * 2 * 100
     ; --- Mean Fractional Error (percent)
     FERROR = sum(abs((xs3 - ys3) / (xs3 + ys3))) / lens3 * 2 * 100
-    ; --- Correlation Coefficient(R2)
+    ; --- Correlation Coefficient(R)
     CORRCOEFF = sum((xs - avg(xs)) * (ys - avg(ys))) / sqrt(sum((xs - avg(xs))^2) * sum((ys - avg(ys))^2))
     p = rtest(CORRCOEFF, lens, 0)
 
@@ -145,14 +145,20 @@ end
 ;**********************************************************************
 ; Convert ug/m3 to ppbv unit (for several gas air pollutant such as O3)
 ;**********************************************************************
-undef("MEEugm3_to_ppbv")
-function MEEugm3_to_ppbv(var[1] : string, data, idim[1] : integer, times[*] : string)
+undef("MEE_ugm3_to_ppbv")
+function MEE_ugm3_to_ppbv(var[1] : string, data, idim[1] : integer, times[*] : string)
 begin
     index_nso = ind(times .lt. "201809")
     index_nsn = ind(times .ge. "201809")
 
     if (var .eq. "O3" .or. var .eq. "O3_MDA8") then
         M = 48
+    elseif (var .eq. "PM25") then
+        return data
+    elseif (var .eq. "SO2") then
+        M = 64
+    elseif (var .eq. "NO2") then
+        M = 46
     else
         print("function <MEEugm3_to_ppbv> : Error, unsupport var " + var)
         exit()
@@ -164,14 +170,21 @@ begin
     dims = dimsizes(data)
     ndims = dimsizes(dims)
 
-    assert(idim .eq. 0, "function <MEEugm3_to_ppbv> : Error, now only support idim = 0, now is " + idim)
+    ; assert(idim .eq. 0, "function <MEEugm3_to_ppbv> : Error, now only support idim = 0, now is " + idim)
 
-    if (ndims .eq. 3) then
+    if (ndims .eq. 3 .and. idim .eq. 0) then
         if (.not.all(ismissing(index_nso))) then
             res(index_nso, :, :) = data(index_nso, :, :) * 22.4 / M
         end if
         if (.not.all(ismissing(index_nsn))) then
             res(index_nsn, :, :) = data(index_nsn, :, :) * 24.5 / M
+        end if
+    elseif (ndims .eq. 2 .and. idim .eq. 1) then
+        if (.not.all(ismissing(index_nso))) then
+            res(:, index_nso) = data(:, index_nso) * 22.4 / M
+        end if
+        if (.not.all(ismissing(index_nsn))) then
+            res(:, index_nsn) = data(:, index_nsn) * 24.5 / M
         end if
     else
         print("function <MEEugm3_to_ppbv> : Error, unsupport ndims " + ndims)

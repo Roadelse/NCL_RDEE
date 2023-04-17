@@ -143,8 +143,8 @@ end
 ; This function is used to get season from times such as YYYYMMDD, 
 ; YYYYMM, YYYYJJJ
 ;**********************************************************************
-undef("getSeason")
-function getSeason(date, opt)
+undef("getSeasons")
+function getSeasons(date, opt)
 local dateStr, ms, type, ss
 begin
     dateStr = "" + date
@@ -292,8 +292,8 @@ function render_dh_series(dh1, dh2)
 local t1, t2, format, t_series, dh_series
 begin
     format = "%Y%N%D%H"
-    t1 = cd_inv_string(dh1, format) ; units :       hours since 1800-01-01 00:00:00
-    t2 = cd_inv_string(dh2, format) ; units :       hours since 1800-01-01 00:00:00
+    t1 = cd_inv_string("" + dh1, format) ; units :       hours since 1800-01-01 00:00:00
+    t2 = cd_inv_string("" + dh2, format) ; units :       hours since 1800-01-01 00:00:00
     t_series := todouble(ispan(toint(t1), toint(t2), 1))
     copy_VarMeta(t1, t_series)
     dh_series = cd_string(t_series, format)  ; will have @_FillValue : missing
@@ -599,7 +599,10 @@ begin
         return res
     elseif (time_reso_dst .eq. "monthly") then
         time_dst = cd_string(greTime, "%Y%N")
+        ; print(time_dst(:750))
         res = dim_xxx_label_n(data, time_dst, idim, method)
+        ; print(res(0, :))
+        ; print(data(:720, 1))
         res@times = res@labels
         delete(res@labels)
         return res
@@ -699,37 +702,6 @@ begin
     return res2
 end
 
-
-
-;**********************************************************************
-; Convert definition of a series of integer into an array
-; supporting "to" and "sep" sign
-;**********************************************************************
-undef("splitIntsDef")
-function splitIntsDef(idef, to, sep)
-; to : from A to B, usually "-", such as 2015-2020, 1-9
-; sep : seperator, usually ",", such as "1,3,5,7"
-begin
-    pos_sep = str_index_of_substr(idef, sep, 1)
-    if (ismissing(pos_sep)) then
-        if (str_match_bool(idef, to)) then
-            i_pair = toint(str_split(idef, to))
-            if (i_pair(0) .lt. i_pair(1)) then
-                iList = ispan(i_pair(0), i_pair(1), 1)
-            else
-                iList = ispan(i_pair(1), i_pair(0), 1)
-                iList = iList(::-1)
-            end if
-            return iList 
-        else
-            return toint(idef)
-        end if
-    else
-        res = array_append_record(splitIntsDef(str_get_cols(idef, 0, pos_sep - 1), to, sep), splitIntsDef(str_get_cols(idef, pos_sep + 1, -1), to, sep), 0)
-        return res
-    end if
-
-end
 
 
 
@@ -1096,7 +1068,7 @@ begin
     ys = getYYYY(ymd_series, optG) ; "2015", "2016", ... ...
     ms = getMM(ymd_series, optG)   ; "01", "02", ... "12"
     optG@type = "int"
-    ss = getSeason(ymd_series, optG)  ; 0, 1, 2, 3
+    ss = getSeasons(ymd_series, optG)  ; 0, 1, 2, 3
 
     years_str = "" + years
     if (typeof(seasons) .eq. "string" .and. seasons(0) .eq. "ALL") then
