@@ -1,0 +1,16 @@
+#!/bin/csh -f
+
+#echo $0
+set folder = `dirname $0`
+
+if ( $#argv == 1) then
+    echo wulala
+    setenv VAR all
+else
+    setenv VAR $2
+endif 
+
+
+setenv FILE $1
+echo "calculating mean value of vars in file: $1"
+ncl -Q $folder/calNcVarSum_nn.ncl
